@@ -2,25 +2,22 @@
 <html>
 <head>
     <title>Customer Churn Prediction</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        input { margin-bottom: 10px; padding: 8px; width: 200px; }
-        button { padding: 10px 15px; background: #28a745; color: white; border: none; cursor: pointer; }
-        button:hover { background: #218838; }
-        .result { margin-top: 20px; font-size: 18px; }
-    </style>
 </head>
 <body>
     <h1>Customer Churn Prediction</h1>
     <form action="/predict" method="post">
-        {% for feature in features %}
-            <label>{{ feature }}:</label><br>
-            <input type="text" name="{{ feature }}" required><br>
+        {% for feature in ["SeniorCitizen","partner","dependents","phone_service","internet_service","online_security","tech_support"] %}
+            {{ feature }}:
+            <select name="{{ feature }}">
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select><br><br>
         {% endfor %}
-        <button type="submit">Predict</button>
+
+        Contract (number):
+        <input type="number" name="contract" value="1"><br><br>
+
+        <input type="submit" value="Predict">
     </form>
-    {% if prediction_text %}
-        <div class="result"><strong>{{ prediction_text }}</strong></div>
-    {% endif %}
 </body>
 </html>
