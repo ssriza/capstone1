@@ -1,45 +1,46 @@
 from flask import Flask, request, jsonify, render_template
+import joblib
+import pandas as pd
 
 app = Flask(__name__)
 
-keyword_responses = {
-    "hi": "Hello there! 😊",
-    "hello": "Hi! How can I assist you today?",
-    "hey": "Hey! What's up?",
-    "bye": "Goodbye! Have a great day! 👋",
-    "see you": "See you soon!",
-    "thanks": "You're welcome! 😊",
-    "thank you": "Anytime! Glad I could help.",
-    "help": "I'm here to help. What do you need?",
-}
-
-default_response = "I'm not sure how to respond to that, but I'm here for you."
-
+# Load model, scaler, and feature list
+model = joblib.load("model.pkl")
+scaler = joblib.load("scaler.pkl")
+feature_names = joblib.load("features.pkl")
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("index.html", features=feature_names)
 
+@app.route("/predict", methods=["POST"])
+def predict():
+    try:
+        # Get form data from HTML
+        input_data = [float(request.form[feature]) for feature in feature_names]
 
-@app.route("/about")
-def about():
-    return render_template("about.html")
+        # Create DataFrame
+        df = pd.DataFrame([input_data], columns=feature_names)
 
-@app.route("/chat", methods=["POST"])
-def chat():
-    user_input = request.json.get("message", "").lower().strip()
-    if not user_input:
-        return jsonify({"error": "No message provided"}), 400
+        # Scale data
+        df_scaled = scaler.transform(df)
 
-    reply = default_response
-    for keyword in keyword_responses:
-        if keyword in user_input:
-            reply = keyword_responses[keyword]
-            break
+        # Predict
+        prediction = model.predict(df_scaled)[0]
+        probability = model.predict_proba(df_scaled)[0][1]
 
-    return jsonify({"reply": reply})
+        return render_template(
+            "index.html",
+            features=feature_names,
+            prediction_text=f"Churn: {prediction}, Probability: {probability:.2f}"
+        )
 
+    except Exception as e:
+        return render_template(
+            "index.html",
+            features=feature_names,
+            prediction_text=f"Error: {str(e)}"
+        )
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5006)
-
+    app.run(debug=True)
